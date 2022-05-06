@@ -1,0 +1,41 @@
+version: "3.3"
+
+services:
+  # `webserver` service provides Apache + PHP
+  webserver:
+    container_name : webservice
+    # Use custom image based on php-apache official image
+    image: php:7.2-apache-stretch
+    # Run the services as the same user as the host's one, or as user with uid 1000
+    user: "${UID:-1001}:${GID:-1001}"
+    # Expose HTTP/S ports
+    ports:
+      - "8000:80"
+    working_dir: /var/www/html # chemin virtuel pointant vers le container déployé
+    volumes: 
+      # Served files
+      - ./www:/var/www/html
+    sysctls:
+      # Allow OS to bind 80 port to unprivileged (eg. non-root) users
+      - net.ipv4.ip_unprivileged_port_start=0 
+
+  ftp:
+    image: stilliard/pure-ftpd:latest
+    #
+    ports:
+      - "21:21"
+      - "30000-30009:30000-30009"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    environment:
+      PUBLICHOST: localhost #
+      FTP_USER_NAME: "Jul1" #
+      FTP_USER_PASS: "digital2021" #
+      FTP_USER_HOME: "/var/www/html"
+      FTP_USER_UID: 33 #
+      FTP_USER_GID: 33 #
+    volumes:
+      - .:/var/www/html
+
